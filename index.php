@@ -3,9 +3,8 @@
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $title = $_POST["title"];
     $message = $_POST["message"];
-    $postId = time(); // idとして使用する目的
 
-    $post = "$postId | $title | $message\n";
+    $post = "$title | $message\n";
     file_put_contents('posts.txt', $post, FILE_APPEND);
     header("Location: index.php"); // リロード時の再投稿防止
     exit();
@@ -15,14 +14,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 $postDetail = ""; // 投稿データを保存するための変数
 if (file_exists('posts.txt')) {
     $posts = file('posts.txt');
-    $index = 0;
-
-    while ($index < count($posts)) {
-        $currentPost = $posts[$index];
-        list($postId, $title, $message) = explode('|', $currentPost);
-        $postDetail .= "<p>タイトル:$title<br>投稿内容:$message</p>"; // 各投稿を $postDetail に追加
-        $index++;
+    if (count($posts) > 0) { // ファイルに内容があるかチェック
+        $index = 0;
+        while ($index < count($posts)) {
+            $currentPost = $posts[$index]; // 余分な空白や改行を削除
+            list($title, $message) = explode('|', $currentPost);
+            $postDetail .= "<p>タイトル:$title<br>投稿内容:$message</p>"; // 各投稿を $postDetail に追加
+            $index++;
+        }
+    } else {
+        $postDetail = "<p>まだ投稿がありません。</p>"; // ファイルが空の場合のメッセージ
     }
+} else {
+    $postDetail = "<p>まだ投稿がありません。</p>"; // ファイルが存在しない場合のメッセージ
 }
 ?>
 
@@ -40,7 +44,7 @@ if (file_exists('posts.txt')) {
         <input type="text" id="title" name="title">
         <br><br>
         <label for="message">投稿内容:</label>
-        <textarea id="title" name="message"></textarea>
+        <textarea id="message" name="message"></textarea>
         <br><br>
         <input type="submit" value="投稿">
     </form>
