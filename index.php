@@ -1,19 +1,22 @@
 <?php
+// 投稿機能
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $title = $_POST["title"];
     $message = $_POST["message"];
-    $postId = time();
+    $postId = time(); // idとして使用する目的
 
     $post = "$postId | $title | $message\n";
     file_put_contents('posts.txt', $post, FILE_APPEND);
-    header("Location: index.php");
+    header("Location: index.php"); // リロード時の再投稿防止
     exit();
 }
 
+// 投稿一覧機能
 $postDetail = ""; // 投稿データを保存するための変数
 if (file_exists('posts.txt')) {
     $posts = file('posts.txt');
     $index = 0;
+
     while ($index < count($posts)) {
         $currentPost = $posts[$index];
         list($postId, $title, $message) = explode('|', $currentPost);
