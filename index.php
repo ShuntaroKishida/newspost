@@ -33,22 +33,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 // 投稿一覧機能
-$postDetail = ""; // 投稿データを保存するための変数
-if (file_exists('posts.txt')) {
-    $posts = file('posts.txt');
-    if (count($posts) > 0) { // ファイルに内容があるかチェック
-        $index = 0;
+$postDetails = []; // 投稿データを保存するための配列
+$postsFile = "posts.txt";
+if (file_exists($postsFile)) {
+    $posts = file($postsFile);
+    $index = 0;
+    if (count($posts) > 0) {
         while ($index < count($posts)) {
-            $currentPost = $posts[$index];
-            list($postId, $title, $message) = explode('|', $currentPost);
-            $postDetail .= "<p><a href='show.php?id=$postId'>タイトル: $title</a><br>投稿内容: $message</p>"; // 各投稿を $postDetail に追加
+            $line = $posts[$index];
+            list($postId, $title, $message) = explode('|', $line);
+            $postDetails[] = [
+                'id' => $postId,
+                'title' => $title,
+                'message' => $message
+            ]; // 各投稿を配列として $postDetails に追加
             $index++;
         }
-    } else {
-        $postDetail = "<p>まだ投稿がありません。</p>"; // ファイルが空の場合のメッセージ
     }
-} else {
-    $postDetail = "<p>まだ投稿がありません。</p>"; // ファイルが存在しない場合のメッセージ
 }
 ?>
 
@@ -79,6 +80,17 @@ if (file_exists('posts.txt')) {
         <input type="submit" value="投稿">
     </form>
     <h2>投稿一覧</h2>
-    <?php echo $postDetail; ?>
+    <?php
+    if (empty($postDetails)) {
+        echo "<p>まだ投稿がありません。</p>";
+    } else {
+        $index = 0;
+        while ($index < count($postDetails)) {
+            $post = $postDetails[$index];
+            echo "<p><a href='show.php?id=".$post['id']."'>タイトル: ".$post['title']."</a><br>投稿内容: ".$post['message']."</p>";
+            $index++;
+        }
+    }
+    ?>
 </body>
 </html>

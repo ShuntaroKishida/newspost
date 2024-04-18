@@ -80,10 +80,10 @@ if (file_exists($commentFile)) {
             $index++;
         }
     } else {
-        $commentDetail .= "<p>まだ投稿がありません。</p>";
+        $commentDetail .= "<p>まだコメントがありません。</p>";
     }
 } else {
-    $commentDetail .= "<p>まだ投稿がありません。</p>";
+    $commentDetail .= "<p>まだコメントがありません。</p>";
 }
 ?>
 
@@ -94,7 +94,7 @@ if (file_exists($commentFile)) {
     <title>投稿詳細</title>
     <script>
         function confirmSubmit() {
-            return confirm('本当に投稿しますか？');
+            return confirm('本当にコメントしますか？');
         }
     </script>
 </head>
