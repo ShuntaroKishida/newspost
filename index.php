@@ -69,7 +69,7 @@ if (file_exists($postsFile)) {
 
 </head>
 <body>
-    <h1>Laravel News</h1>
+    <h1><a href="./index.php">Laravel News</a></h1>
     <form action="./index.php" method="post" onsubmit="return confirmSubmit();">
         <label for="title">タイトル:</label>
         <input type="text" id="title" name="title">

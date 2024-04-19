@@ -17,32 +17,13 @@ if (isset($_GET['id'])) {
     fclose($file);
 }
 
-// コメント削除機能
-if (isset($_GET['deleteCommentId'])) {
-    $deleteCommentId = $_GET['deleteCommentId'];
-    $commentFile = "comments_$postId.txt";
-    $updatedComments = [];
-
-    $file = fopen($commentFile, "r"); // ファイルを読み込みモードで開く
-    while ($comment = fgets($file)) { // ファイルから1行ずつ読み込む
-        list($commentId, $commentText) = explode('|', $comment);
-        if (trim($commentId) !== $deleteCommentId) { //trimで\nを排除する
-            $updatedComments[] = $comment; // 削除対象でなければ配列に追加
-        }
-    }
-    fclose($file); // ファイルストリームを閉じる
-
-    file_put_contents($commentFile, $updatedComments); // 配列をファイルに書き込む
-    header("Location: show.php?id=$postId"); // ページをリダイレクト
-    exit();
-}
-
 // コメント投稿機能
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $comment = $_POST["comment"];
-    $errors = [];  // エラーメッセージを保持する配列
+    $postId = $_GET['id'];
+    $errors = [];
 
-    if (empty(trim($comment))) {
+    if (empty($comment)) {
         $errors[] = "コメントを入力してください。";
     }
 
@@ -52,38 +33,62 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if (empty($errors)) {
         $commentId = time();
-        $commentData = "$commentId | $comment\n";
-        $commentFile = "comments_$postId.txt";
-        file_put_contents($commentFile, $commentData, FILE_APPEND);
+        $commentData = "$postId|$commentId|$comment\n";
+        file_put_contents("comments.txt", $commentData, FILE_APPEND);
         header("Location: show.php?id=$postId");
         exit();
     } else {
-        $error = current($errors); // 配列の最初の要素を取得
+        $error = current($errors);
         while ($error !== false) { // 現在の要素がfalseでない間ループ
             echo "<p style='color: red;'>{$error}</p>";
-            $error = next($errors); // 次の要素に移動
+            $error = next($errors);
         }
     }
 }
 
 // コメント一覧機能
-$commentFile = "comments_$postId.txt";
-$commentDetail = "";
-if (file_exists($commentFile)) {
-    $comments = file($commentFile);
+$commentDetails = []; // 投稿データを保存するための配列
+$commentsFile = "comments.txt";
+if (file_exists($commentsFile)) {
+    $comments = file($commentsFile);
+    $index = 0;
     if (count($comments) > 0) {
-        $index = 0;
         while ($index < count($comments)) {
-            $currentComment = $comments[$index];
-            list($currentCommentId, $comment) = explode('|', $currentComment);
-            $commentDetail .= "<p>".$comment."<a href='show.php?id=$postId&deleteCommentId=$currentCommentId' onclick='return confirm(\"本当に削除しますか？\");'>削除</a></p>";
+            $line = $comments[$index];
+            list($currentPostId, $currentCommentId, $commentText) = explode('|', $line);
+            if ($currentPostId == $postId) { // この投稿IDに関連するコメントのみを格納
+                $commentDetails[] = [
+                    'postId' => $currentPostId,
+                    'commentId' => $currentCommentId,
+                    'commentText' => $commentText
+                ];
+            }
             $index++;
         }
-    } else {
-        $commentDetail .= "<p>まだコメントがありません。</p>";
     }
-} else {
-    $commentDetail .= "<p>まだコメントがありません。</p>";
+}
+
+// コメント削除機能
+if (isset($_GET['deleteCommentId'])) {
+    $deleteCommentId = $_GET['deleteCommentId'];
+    $updatedComments = [];
+    $currentPostId = '';  // 現在の投稿IDを追跡（リダイレクト用）
+
+    if (file_exists("comments.txt")) {
+        $file = fopen("comments.txt", "r");
+        while (($line = fgets($file)) !== false) {
+            list($currentPostId, $currentCommentId, $commentText) = explode('|', $line);
+            if (trim($currentCommentId) != $deleteCommentId) {  // 削除対象のコメントIDでなければ配列に追加
+                $updatedComments[] = $line;
+            }
+        }
+        fclose($file);
+
+        // 更新後のコメントをファイルに書き込む
+        file_put_contents("comments.txt", implode('', $updatedComments));
+        header("Location: show.php?id=$currentPostId");
+        exit();
+    }
 }
 ?>
 
@@ -99,7 +104,8 @@ if (file_exists($commentFile)) {
     </script>
 </head>
 <body>
-    <h1>投稿詳細</h1>
+    <h1><a href="./index.php">Laravel News</a></h1>
+    <h2>投稿詳細</h2>
     <?php echo $post_title; ?>
     <?php echo $post_message; ?>
     <h2>コメント投稿</h2>
@@ -112,6 +118,17 @@ if (file_exists($commentFile)) {
     </form>
     <br>
     <h2>コメント一覧</h2>
-    <?php echo $commentDetail; ?>
+    <?php
+    if (empty($commentDetails)) {
+        echo "<p>まだコメントがありません。</p>";
+    } else {
+        $index = 0;
+        while ($index < count($commentDetails)) {
+            $comment = $commentDetails[$index];
+            echo "<p>$commentText<a href='show.php?id=$postId&deleteCommentId=$currentCommentId' onclick='return confirm(\"本当に削除しますか？\");'>削除</a></p>";
+            $index++;
+        }
+    }
+    ?>
 </body>
 </html>
